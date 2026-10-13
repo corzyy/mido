@@ -1,0 +1,66 @@
+{
+  "shell": {
+    "screen": "DP-1"
+  },
+  "bar": {
+    "position": "top",
+    "height": 26,
+    "font": "monospace",
+    "fontSize": 12,
+    "layout": {
+      "left": [
+        {
+          "id": "menu"
+        },
+        {
+          "id": "workspaces"
+        },
+        {
+          "id": "media"
+        }
+      ],
+      "center": [
+        {
+          "id": "indicators"
+        },
+        {
+          "id": "clock",
+          "format": "dddd HH:mm",
+          "formatAlt": "d MMMM 'W'ww yyyy"
+        },
+        {
+          "id": "system-update"
+        },
+        {
+          "id": "weather"
+        }
+      ],
+      "right": [
+        {
+          "id": "keyboard-layout"
+        },
+        {
+          "id": "tray"
+        },
+        {
+          "id": "network"
+        },
+        {
+          "id": "bluetooth"
+        },
+        {
+          "id": "audio"
+        },
+        {
+          "id": "microphone"
+        },
+        {
+          "id": "monitor"
+        },
+        {
+          "id": "battery"
+        }
+      ]
+    }
+  }
+}

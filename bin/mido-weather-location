@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# mido-weather-location --set <name> [<latitude>,<longitude>] | --clear
+# Stores the location the weather widget reports on, in ~/.local/state/mido/weather.json.
+# Without a location the widget finds one from the network address.
+set -eu
+
+file="${XDG_STATE_HOME:-$HOME/.local/state}/mido/weather.json"
+
+case "${1:-}" in
+  --set)
+    name="${2:?usage: mido-weather-location --set <name> [<latitude>,<longitude>]}"
+    mkdir -p "$(dirname "$file")"
+    if [[ -n "${3:-}" ]]; then
+      jq -n --arg name "$name" --arg lat "${3%%,*}" --arg lon "${3##*,}" \
+        '{name: $name, latitude: ($lat | tonumber), longitude: ($lon | tonumber)}' >"$file"
+    else
+      jq -n --arg name "$name" '{name: $name}' >"$file"
+    fi
+    ;;
+  --clear)
+    rm -f "$file"
+    ;;
+  *)
+    echo "usage: mido-weather-location --set <name> [<latitude>,<longitude>] | --clear" >&2
+    exit 2
+    ;;
+esac

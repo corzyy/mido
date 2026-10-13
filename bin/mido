@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# mido - control the mido Quickshell instance. Only ever targets this config.
+set -euo pipefail
+
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+DIR="$(dirname "$(dirname "$SELF")")"
+
+qs_mido() { qs -p "$DIR" "$@"; }
+running() { qs_mido list 2>/dev/null | grep -q "^Instance"; }
+
+usage() {
+  cat <<USAGE
+Usage: mido <command>
+
+  start            Start mido in the background (no-op if already running)
+  stop | close     Stop mido
+  restart          Stop, then start
+  reload           Same as restart (the shell also hot-reloads on file save)
+  status           Show whether mido is running
+  log [-f]         Print the log (-f to follow)
+  ipc <args...>    Pass through to 'qs ipc' for this instance
+  run              Run in the foreground with output (for debugging)
+  edit             Open the config directory in \$EDITOR
+USAGE
+}
+
+cmd="${1:-}"
+[[ $# -gt 0 ]] && shift
+
+case "$cmd" in
+  start)
+    if running; then echo "mido is already running"; else qs_mido -d --no-duplicate >/dev/null; echo "mido started"; fi ;;
+  stop|close|kill|quit)
+    if running; then qs_mido kill; echo "mido stopped"; else echo "mido is not running"; fi ;;
+  restart|reload)
+    running && qs_mido kill
+    # kill is asynchronous; wait for the instance to disappear
+    for _ in $(seq 20); do running || break; sleep 0.1; done
+    qs_mido -d --no-duplicate >/dev/null; echo "mido restarted" ;;
+  status)
+    if running; then qs_mido list; else echo "mido is not running"; exit 1; fi ;;
+  log|logs)
+    qs_mido log "$@" ;;
+  ipc)
+    qs_mido ipc "$@" ;;
+  run)
+    exec qs -p "$DIR" "$@" ;;
+  edit)
+    cd "$DIR" && exec "${EDITOR:-nano}" . ;;
+  ""|-h|--help|help)
+    usage ;;
+  *)
+    echo "mido: unknown command '$cmd'" >&2; usage >&2; exit 2 ;;
+esac

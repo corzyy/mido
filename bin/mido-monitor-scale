@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# mido-monitor-scale <scale>: set the scale of the focused monitor, keeping its mode and position.
+# The change lasts until Hyprland restarts; put it in the monitor configuration to keep it.
+set -eu
+export LC_ALL=C
+
+scale="${1:?usage: mido-monitor-scale <scale>}"
+read -r name mode x y < <(hyprctl -j monitors | jq -r '.[] | select(.focused) | "\(.name) \(.width)x\(.height)@\(.refreshRate) \(.x) \(.y)"')
+hyprctl eval "hl.monitor({ output = \"$name\", mode = \"$mode\", position = \"${x}x${y}\", scale = $scale })"

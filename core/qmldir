@@ -1,0 +1,6 @@
+module qs.core
+singleton Config 1.0 Config.qml
+singleton Colors 1.0 Colors.qml
+singleton Style 1.0 Style.qml
+singleton Util 1.0 Util.qml
+singleton Border 1.0 Border.qml

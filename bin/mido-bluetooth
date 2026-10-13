@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# mido-bluetooth connect|pair|disconnect|forget <address>   act on a device
+# mido-bluetooth power on|off                               switch the radio
+set -u
+
+case "${1:-}" in
+  connect)
+    bluetoothctl --timeout 20 connect "$2" ;;
+  pair)
+    bluetoothctl --timeout 40 pair "$2" && bluetoothctl trust "$2" && bluetoothctl --timeout 20 connect "$2" ;;
+  disconnect)
+    bluetoothctl disconnect "$2" ;;
+  forget)
+    bluetoothctl disconnect "$2" >/dev/null 2>&1
+    bluetoothctl remove "$2" ;;
+  power)
+    # Both the rfkill block and the adapter state, so the setting survives a reboot.
+    case "${2:-}" in
+      on) rfkill unblock bluetooth; bluetoothctl power on ;;
+      off) bluetoothctl power off; rfkill block bluetooth ;;
+      *) exit 2 ;;
+    esac ;;
+  *)
+    echo "usage: mido-bluetooth connect|pair|disconnect|forget <address> | power on|off" >&2
+    exit 2 ;;
+esac

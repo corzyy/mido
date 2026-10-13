@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# mido-monitor-state: print the state the display panel shows, one value per line:
+#   1 brightness percent, or "unavailable"        5 mirrored monitor (empty)
+#   2 internal monitor                            6 focused monitor
+#   3 external monitor                            7 scale of the focused monitor
+#   4 internal monitor if it is enabled          8 all monitors as JSON
+set -u
+export LC_ALL=C
+
+brightness=$(brightnessctl -m -c backlight info 2>/dev/null | head -n 1 | awk -F, 'NF >= 5 {gsub("%", "", $4); print $4}')
+monitors=$(hyprctl -j monitors all 2>/dev/null || echo '[]')
+
+internal=$(jq -r '[.[] | select(.name | test("^(eDP|LVDS|DSI)")) | .name][0] // ""' <<<"$monitors")
+external=$(jq -r '[.[] | select(.name | test("^(eDP|LVDS|DSI)") | not) | .name][0] // ""' <<<"$monitors")
+internal_enabled=$(jq -r --arg n "$internal" '[.[] | select(.name == $n and (.disabled | not)) | .name][0] // ""' <<<"$monitors")
+focused=$(jq -r '[.[] | select(.focused) | .name][0] // ""' <<<"$monitors")
+scale=$(jq -r '[.[] | select(.focused) | .scale][0] // ""' <<<"$monitors")
+displays=$(jq -c '[.[] | {name, enabled: (.disabled | not), focused, width, height, description}]' <<<"$monitors")
+
+printf '%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n' "${brightness:-unavailable}" "$internal" "$external" "$internal_enabled" "$focused" "$scale" "$displays"

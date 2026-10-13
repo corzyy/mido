@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# mido-network-band [auto|2.4|5|6]: report the Wi-Fi band in use, the one pinned for the active
+# connection and the bands the network offers; with an argument, pin that band and reconnect.
+# The report is "key<TAB>value" lines: band, selected, available.
+set -u
+export LC_ALL=C
+
+dev=$(nmcli -t -f TYPE,DEVICE,STATE device status 2>/dev/null | awk -F: '$1 == "wifi" && $3 == "connected" {print $2; exit}')
+[[ -n "$dev" ]] || exit 0
+conn=$(nmcli -t -g GENERAL.CONNECTION device show "$dev" 2>/dev/null)
+[[ -n "$conn" ]] || exit 0
+
+band_of() {
+  local mhz=${1%% *}
+  if (( mhz >= 5925 )); then echo 6
+  elif (( mhz >= 4900 )); then echo 5
+  else echo 2.4
+  fi
+}
+
+if [[ $# -gt 0 ]]; then
+  case "$1" in
+    auto) value="" ;;
+    2.4) value=bg ;;
+    5 | 6) value=a ;;
+    *) exit 2 ;;
+  esac
+  nmcli connection modify "$conn" 802-11-wireless.band "$value" || exit 1
+  nmcli connection up "$conn" >/dev/null || exit 1
+  exit 0
+fi
+
+current=""
+declare -A seen
+available=()
+while IFS=: read -r inuse ssid freq; do
+  [[ "${ssid//\\:/:}" == "$conn" || -n "$inuse" ]] || continue
+  band=$(band_of "$freq")
+  [[ "$inuse" == "*" ]] && current=$band
+  if [[ -z "${seen[$band]:-}" ]]; then
+    seen[$band]=1
+    available+=("$band")
+  fi
+done < <(nmcli -t -f IN-USE,SSID,FREQ device wifi list ifname "$dev" --rescan no 2>/dev/null)
+
+pinned=$(nmcli -t -g 802-11-wireless.band connection show "$conn" 2>/dev/null)
+case "$pinned" in
+  a) selected=5 ;;
+  bg) selected=2.4 ;;
+  *) selected=auto ;;
+esac
+
+printf 'band\t%s\nselected\t%s\navailable\t%s\n' "$current" "$selected" "${available[*]}"
