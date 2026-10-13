@@ -3,6 +3,23 @@
 A minimal Quickshell shell, ported from the Omarchy "quattro" bar. No plugin
 system and no theme manager: colors come from matugen, layout from `settings.json`.
 
+## Install (Fedora)
+
+One command: installs SDDM, Hyprland, Quickshell (from its COPR) and all
+dependencies, puts the config in `~/.config/mido` and wires up the `mido`
+commands:
+
+    curl -fsSL https://raw.githubusercontent.com/corzyy/mido/main/install.sh | bash
+
+Or from a checkout:
+
+    git clone https://github.com/corzyy/mido ~/.config/mido
+    ~/.config/mido/install.sh
+
+The installer is safe to re-run. Afterwards log out and pick the Hyprland
+session in SDDM (mido starts with it), or start it inside a running Hyprland
+session with `mido start`.
+
 ```
 shell.qml            entry point, instantiates the modules
 bin/mido             the `mido` control command
